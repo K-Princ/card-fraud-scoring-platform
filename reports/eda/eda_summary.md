@@ -327,3 +327,145 @@ However, significant class imbalance, high missingness, partial identity coverag
 The findings from this analysis will guide the development of a reusable data-cleaning and feature-engineering pipeline in Phase 2.
 
 **Phase 1 status:** Core exploratory analysis completed. Findings documented; review and reproducibility checks remain part of the phase approval process.
+
+## Data Validation — Phase 2
+
+- Transaction records: 590,540
+- Transaction columns: 395
+- Duplicate TransactionIDs: 0
+- Missing target values: 0
+- Required columns: All present
+- Negative transaction amounts: 0
+- Negative transaction times: 0
+- Target values: 0 and 1
+- Missing values in key columns: 0
+
+Result: Initial data validation passed.
+
+### Missingness Feature Analysis
+
+- Created missing-value indicators for dist2, D7, and D13.
+- D7 missing: 2.70% fraud rate.
+- D7 present: 14.88% fraud rate.
+- D7 missingness may provide predictive information.
+
+Decision: Preserve missingness indicators for further model evaluation.
+
+### Missingness Indicator Feature Engineering
+
+Created a reusable function:
+- File: src/features/build_features.py
+- Function: add_missing_indicators()
+- Features: dist2_missing, D7_missing, D13_missing
+
+Validation:
+- Tested on a 1,000-row sample.
+- All three indicators were created successfully.
+- Original input DataFrame remained unchanged.
+- Different missingness combinations were observed.
+
+Result: Feature function test passed.
+
+### Reusable Preprocessing Pipeline
+
+Created in src/features/build_features.py:
+
+Functions:
+- add_missing_indicators()
+- fill_numeric_missing()
+- get_medians()
+- apply_medians()
+- preprocess_features()
+
+Validation:
+- Tested on 1,000 training rows.
+- Tested on 1,000 validation rows.
+- Both produced 6 features.
+- Zero missing values after preprocessing.
+- Training medians reused for validation data.
+
+Result: Initial reusable preprocessing workflow passed.
+
+### Categorical Feature Engineering
+
+Categorical columns:
+- ProductCD
+- card4
+- card6
+
+Implemented:
+- Missing categories replaced with "Unknown".
+- One-hot encoding tested using Pandas.
+- Reusable scikit-learn OneHotEncoder created.
+- handle_unknown="ignore" configured.
+
+Validation:
+- Encoder fitted on a training sample.
+- Unseen category tested successfully.
+- Output retained 11 columns.
+- No encoding error occurred.
+
+Result: Initial categorical encoding tests passed.
+
+### Reusable Categorical Encoder
+
+Implemented in src/features/build_features.py:
+
+- create_encoder()
+- apply_encoder()
+
+Validation:
+- Encoder fitted on training sample.
+- Unseen category handled without errors.
+- Transformed 1,000 rows successfully.
+- Output contained 11 encoded columns.
+- Feature column consistency check passed.
+
+Result: Categorical transformation passed.
+
+### Temporal Train-Validation Split
+
+Split method: TransactionDT 80th percentile.
+
+Time cutoff: 12192853.6
+
+Training:
+- Rows: 472,432
+- Fraud rate: 3.51%
+
+Validation:
+- Rows: 118,108
+- Fraud rate: 3.44%
+
+Validation checks:
+- Training transactions occur before validation.
+- No chronological overlap.
+- Fraud rates are similar across both sets.
+
+Result: Temporal split validation passed.
+
+### Full Dataset Preprocessing Results
+
+Temporal split:
+- Training rows: 472,432
+- Validation rows: 118,108
+
+Training-fitted numeric medians:
+- dist2: 38.0
+- D7: 0.0
+- D13: 0.0
+
+Feature engineering:
+- 3 numerical features
+- 3 missingness indicators
+- 15 one-hot encoded categorical features
+- Total: 21 features
+
+Validation:
+- Training shape: 472,432 x 21
+- Validation shape: 118,108 x 21
+- Missing values: 0 in both datasets
+- Feature columns consistent: True
+- All features numeric: True
+
+Result: Full training and validation preprocessing passed.
