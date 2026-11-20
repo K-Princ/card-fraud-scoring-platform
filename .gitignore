@@ -221,3 +221,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+data/raw/
+
+/models/
+
+# MLflow local tracking data
+mlflow.db
+mlruns/
