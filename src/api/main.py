@@ -4,6 +4,12 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 import pandas as pd
 from typing import Literal
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+
+from src.database.connection import get_db
+from src.database.models import Transaction, Prediction
 
 app = FastAPI(
     title="Card Fraud Scoring API",
@@ -92,8 +98,12 @@ def model_status():
         "medians_loaded": medians is not None
     }
 
+
 @app.post("/predict")
-def predict_transaction(transaction: TransactionInput):
+def predict_transaction(
+    transaction: TransactionInput,
+    db: Session = Depends(get_db)
+):
     try:
         features = preprocess_transaction(transaction)
 
@@ -107,7 +117,35 @@ def predict_transaction(transaction: TransactionInput):
         else:
             risk_level = "HIGH"
 
+        # Save transaction
+        db_transaction = Transaction(
+            transaction_amt=transaction.TransactionAmt,
+            dist2=transaction.dist2,
+            d7=transaction.D7,
+            d13=transaction.D13,
+            product_cd=transaction.ProductCD,
+            card4=transaction.card4,
+            card6=transaction.card6
+        )
+
+        db.add(db_transaction)
+        db.flush()
+
+        # Save prediction
+        db_prediction = Prediction(
+            transaction_id=db_transaction.transaction_id,
+            fraud_probability=probability,
+            prediction=prediction,
+            risk_level=risk_level,
+            model_version="1.0.0",
+            threshold=FRAUD_THRESHOLD
+        )
+
+        db.add(db_prediction)
+        db.commit()
+
         return {
+            "transaction_id": db_transaction.transaction_id,
             "prediction": prediction,
             "fraud_probability": round(probability, 4),
             "risk_level": risk_level,
@@ -115,8 +153,35 @@ def predict_transaction(transaction: TransactionInput):
         }
 
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=500,
             detail="An error occurred while scoring the transaction."
         ) from e
 
+
+@app.get("/predictions")
+def get_predictions(db: Session = Depends(get_db)):
+    query = (
+        select(Prediction, Transaction)
+        .join(
+            Transaction,
+            Prediction.transaction_id == Transaction.transaction_id
+        )
+        .order_by(Prediction.prediction_id.desc())
+    )
+
+    results = db.execute(query).all()
+
+    return [
+        {
+            "prediction_id": prediction.prediction_id,
+            "transaction_id": transaction.transaction_id,
+            "transaction_amt": float(transaction.transaction_amt),
+            "fraud_probability": prediction.fraud_probability,
+            "prediction": prediction.prediction,
+            "risk_level": prediction.risk_level,
+            "model_version": prediction.model_version
+        }
+        for prediction, transaction in results
+    ]

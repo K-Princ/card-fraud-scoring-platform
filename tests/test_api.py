@@ -87,3 +87,39 @@ def test_predict_missing_categories():
     data = response.json()
     assert data["prediction"] in [0, 1]
     assert 0 <= data["fraud_probability"] <= 1
+
+from src.database.models import Transaction
+
+
+def test_transaction_database_insert(db_session):
+    transaction = Transaction(
+        transaction_amt=150.0,
+        dist2=38.0,
+        d7=0.0,
+        d13=0.0,
+        product_cd="W",
+        card4="visa",
+        card6="debit"
+    )
+
+    db_session.add(transaction)
+    db_session.commit()
+
+    assert transaction.transaction_id is not None
+
+    saved = db_session.get(
+        Transaction,
+        transaction.transaction_id
+    )
+
+    assert saved is not None
+    assert float(saved.transaction_amt) == 150.0
+
+from src.database.connection import get_db
+from src.database.test_connection import TestSessionLocal
+
+
+def test_database_override():
+    assert get_db in app.dependency_overrides
+    assert app.dependency_overrides[get_db].__name__ == "override_get_db"
+    assert TestSessionLocal.kw["bind"].url.database == "fraud_detection_test"
