@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 
+
 def create_encoder():
     return OneHotEncoder(
         handle_unknown="ignore",

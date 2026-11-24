@@ -1,5 +1,8 @@
 from fastapi.testclient import TestClient
 from src.api.main import app
+from src.database.connection import get_db
+from src.database.models import Transaction
+from src.database.test_connection import TestSessionLocal
 
 client = TestClient(app)
 
@@ -88,7 +91,7 @@ def test_predict_missing_categories():
     assert data["prediction"] in [0, 1]
     assert 0 <= data["fraud_probability"] <= 1
 
-from src.database.models import Transaction
+
 
 
 def test_transaction_database_insert(db_session):
@@ -115,8 +118,6 @@ def test_transaction_database_insert(db_session):
     assert saved is not None
     assert float(saved.transaction_amt) == 150.0
 
-from src.database.connection import get_db
-from src.database.test_connection import TestSessionLocal
 
 
 def test_database_override():

@@ -1,12 +1,11 @@
 
-import numpy as np
 
 from sklearn.metrics import (
-    precision_score,
-    recall_score,
-    f1_score,
     average_precision_score,
     confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
 )
 
 

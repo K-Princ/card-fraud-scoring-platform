@@ -1,10 +1,9 @@
 import pytest
-from src.database.test_connection import TestSessionLocal
+from sqlalchemy import delete
 from src.api.main import app
 from src.database.connection import get_db
-from sqlalchemy import delete
-from src.database.test_connection import test_engine
-from src.database.models import Transaction, Prediction
+from src.database.models import Prediction, Transaction
+from src.database.test_connection import TestSessionLocal, test_engine
 
 
 @pytest.fixture

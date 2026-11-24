@@ -1,0 +1,17 @@
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v"
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "PL"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/api/main.py" = ["B008"]
+"tests/*.py" = ["PLR2004"]

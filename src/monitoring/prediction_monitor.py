@@ -1,7 +1,11 @@
-
 from pathlib import Path
+
 import joblib
 import pandas as pd
+from evidently import Dataset, Report
+from evidently.presets import DataDriftPreset
+
+from src.monitoring.alerts import check_drift_status
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 MODEL_DIR = BASE_DIR / "models"
@@ -81,11 +85,6 @@ def compare_predictions(reference_predictions, current_predictions):
 
     return comparison
 
-
-from evidently import Dataset, Report
-from evidently.presets import DataDriftPreset
-
-
 def generate_prediction_drift_report(
     reference_predictions,
     current_predictions
@@ -128,8 +127,7 @@ def generate_prediction_drift_report(
     print("Drift threshold:", drift_threshold)
 
     # Trigger monitoring alert
-    from src.monitoring.alerts import check_drift_status
-
+   
     check_drift_status(drift_detected)
 
     output_path = (

@@ -1,15 +1,15 @@
-from fastapi import FastAPI, HTTPException
-import joblib
 from pathlib import Path
-from pydantic import BaseModel, Field
-import pandas as pd
 from typing import Literal
-from fastapi import Depends
-from sqlalchemy.orm import Session
+
+import joblib
+import pandas as pd
+from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from src.database.connection import get_db
-from src.database.models import Transaction, Prediction
+from src.database.models import Prediction, Transaction
 
 app = FastAPI(
     title="Card Fraud Scoring API",
@@ -26,6 +26,9 @@ scaler = joblib.load(MODEL_DIR / "scaler.pkl")
 medians = joblib.load(MODEL_DIR / "train_medians.pkl")
 
 FRAUD_THRESHOLD = 0.10
+LOW_RISK_THRESHOLD = 0.05
+MEDIUM_RISK_THRESHOLD = 0.10
+
 
 def preprocess_transaction(transaction):
     data = pd.DataFrame([transaction.model_dump()])
@@ -102,7 +105,7 @@ def model_status():
 @app.post("/predict")
 def predict_transaction(
     transaction: TransactionInput,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),  # noqa: B008
 ):
     try:
         features = preprocess_transaction(transaction)
@@ -110,9 +113,9 @@ def predict_transaction(
         probability = float(model.predict_proba(features)[0][1])
         prediction = int(probability >= FRAUD_THRESHOLD)
 
-        if probability < 0.05:
+        if probability < LOW_RISK_THRESHOLD:
             risk_level = "LOW"
-        elif probability < 0.10:
+        elif probability < MEDIUM_RISK_THRESHOLD:
             risk_level = "MEDIUM"
         else:
             risk_level = "HIGH"
@@ -161,7 +164,7 @@ def predict_transaction(
 
 
 @app.get("/predictions")
-def get_predictions(db: Session = Depends(get_db)):
+def get_predictions(db: Session = Depends(get_db)): # noqa: B008
     query = (
         select(Prediction, Transaction)
         .join(
