@@ -2,22 +2,19 @@
 from pathlib import Path
 
 import pandas as pd
-
 from evidently import Dataset, Report
 from evidently.presets import DataDriftPreset
 
+from src.monitoring.alerts import check_drift_status
+from src.monitoring.performance_monitor import (
+    check_performance_alerts,
+    evaluate_model,
+)
 from src.monitoring.prediction_monitor import (
-    generate_predictions,
     compare_predictions,
     generate_prediction_drift_report,
+    generate_predictions,
 )
-
-from src.monitoring.performance_monitor import (
-    evaluate_model,
-    check_performance_alerts,
-)
-from src.monitoring.alerts import check_drift_status
-
 
 # --------------------------------------------------
 # 1. Project paths
